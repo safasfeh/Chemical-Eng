@@ -43,7 +43,7 @@ model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 model.fit(X_train, y_train, validation_split=0.1, epochs=150, batch_size=16, verbose=0)
 
 # Streamlit App
-st.image("ttu_logo.png", width=150)
+st.image("ttu_logo.png", width=800)
 st.markdown("""
 <div style='text-align: center;'>
     <h3 style='color: green;'>Tafila Technical University<br>Natural Resources and Chemical Engineering Department</h3>
