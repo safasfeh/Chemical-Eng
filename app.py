@@ -44,21 +44,21 @@ model.fit(X_train, y_train, validation_split=0.1, epochs=150, batch_size=16, ver
 
 # Streamlit App
 st.image("ttu_logo.png", width=150)
-
-st.title("Modeling Coagulation–Flocculation with Artificial Neural Networks\nOperation Parameters Prediction")
-
 st.markdown("""
-**Tafila Technical University**  
-Natural Resources and Chemical Engineering Department  
-Bachelor's Degree Project
-
-**Students**:  
-- Shahad Mohammed Abushamma  
-- Rahaf Ramzi Al -shakh Qasem  
-- Duaa Musa Al-Khalafat  
-
-**Supervisor**: Dr. Ashraf Alsafasfeh
-""")
+<div style='text-align: center;'>
+    <h3 style='color: green;'>Tafila Technical University<br>Natural Resources and Chemical Engineering Department</h3>
+    <h4>Bachelor's Degree Project</h4>
+</div>
+<div style='border: 2px solid #4CAF50; padding: 20px; border-radius: 10px; margin: 10px;'>
+    <h2 style='text-align: center;'>Modeling Coagulation–Flocculation with Artificial Neural Networks</h2>
+    <h3 style='text-align: center;'>Operation Parameters Prediction</h3>
+    <p><strong>Students:</strong><br>
+    Shahad Mohammed Abushamma<br>
+    Rahaf Ramzi Al -shakh Qasem<br>
+    Duaa Musa Al-Khalafat</p>
+    <p><strong>Supervisor:</strong> Dr. Ashraf Alsafasfeh</p>
+</div>
+""", unsafe_allow_html=True)
 
 st.subheader("📥 Enter the raw water quality parameters below:")
 
@@ -87,12 +87,28 @@ if submitted:
         new_input_scaled = scaler_X.transform(new_input)
         predicted_output_scaled = model.predict(new_input_scaled)
         predicted_output = scaler_y.inverse_transform(predicted_output_scaled)
-
         final_outputs = predicted_output[0]
 
-        quality_vars = output_vars[:7]
         process_vars = output_vars[10:]
+        operational_data = []
+        for i, var in enumerate(process_vars, start=10):
+            value = final_outputs[i]
+            if var.endswith("_mg_L"):
+                unit = "mg/L"
+            elif var.endswith("_rpm"):
+                unit = "rpm"
+            elif var.endswith("_min"):
+                unit = "min"
+            else:
+                unit = ""
+            operational_data.append([var.replace('_', ' '), f"{value:.2f}", unit])
 
+        operational_df = pd.DataFrame(operational_data, columns=["Parameter", "Predicted Value", "Unit"])
+        st.subheader("⚙️ Predicted Operational Parameters")
+        st.info("To achieve good water treatment results, operational parameters should be at minimum these predicted values with ±2% margin.")
+        st.table(operational_df)
+
+        quality_vars = output_vars[:7]
         limits = {
             'Turbidity_final_NTU': 5.0,
             'Fe_final_mg_L': 0.3,
@@ -103,43 +119,24 @@ if submitted:
             'TDS_final_mg_L': 1000.0
         }
 
+        st.subheader("🧪 Predicted Treated Water Quality")
+        data = []
         safe = True
-        quality_data = []
         for i, var in enumerate(quality_vars):
             val = final_outputs[i]
             limit = limits[var]
             status = "✅" if val <= limit else "❌"
             if status == "❌":
                 safe = False
-            quality_data.append([var.replace('_', ' '), f"{val:.2f}", f"≤ {limit}", status])
+            data.append([var.replace('_', ' '), f"{val:.2f}", f"≤ {limit}", status])
 
-        # Show operational parameters first
-        op_units = {
-            'Coagulant_dose_mg_L': 'mg/L',
-            'Flocculant_dose_mg_L': 'mg/L',
-            'Mixing_speed_rpm': 'rpm',
-            'Rapid_mix_time_min': 'min',
-            'Slow_mix_time_min': 'min',
-            'Settling_time_min': 'min'
-        }
-        op_data = []
-        for i, var in enumerate(process_vars, start=10):
-            unit = op_units.get(var, '')
-            op_data.append([var.replace('_', ' '), f"{final_outputs[i]:.2f}", unit])
-
-        df_ops = pd.DataFrame(op_data, columns=["Parameter", "Predicted Value", "Unit"])
-        st.subheader("⚙️ Predicted Operational Parameters")
-        st.markdown("To achieve desirable water treatment results, apply the following operational parameters as minimum values ±2% margin.")
-        st.table(df_ops)
-
-        df_display = pd.DataFrame(quality_data, columns=["Parameter", "Predicted Value", "Limit", "Status"])
-        st.subheader("🧪 Predicted Treated Water Quality")
+        df_display = pd.DataFrame(data, columns=["Parameter", "Predicted Value", "Limit", "Status"])
         st.table(df_display)
 
         fig, ax = plt.subplots()
-        values = [float(row[1]) for row in quality_data]
-        limits_list = [float(row[2].split()[-1]) for row in quality_data]
-        labels = [row[0] for row in quality_data]
+        values = [float(row[1]) for row in data]
+        limits_list = [float(row[2].split()[-1]) for row in data]
+        labels = [row[0] for row in data]
         ax.barh(labels, limits_list, color='lightgray', label="Limit")
         ax.barh(labels, values, color='skyblue', alpha=0.8, label="Predicted")
         ax.legend()
@@ -151,13 +148,15 @@ if submitted:
             st.error("❌ Result: Water is NOT safe for reuse or discharge.")
             st.subheader("🔁 Suggested Operational Adjustments")
             st.markdown(
-                "- **Increase Coagulant dose**: Improves the removal of suspended solids and metals. \n"
-                "  `This can help reduce turbidity, Fe, Mn.`\n"
-                "- **Increase Flocculant dose**: Enhances floc formation for better sedimentation. \n"
-                "  `This supports lowering of TDS and fine solids.`\n"
-                "- **Increase Settling time**: Allows more particles to settle out of solution. \n"
-                "  `This improves clarity and reduces final turbidity.`\n"
-                "- **Adjust Mixing Speed/Time**: Better mixing can improve contact efficiency of chemicals. \n"
-                "  `Slower mixing during flocculation can improve settling behavior.`"
+                "- **Increase Coagulant dose**: Improves the removal of suspended solids and metals. `This can help reduce turbidity, Fe, Mn.`"
+            )
+            st.markdown(
+                "- **Increase Flocculant dose**: Enhances floc formation for better sedimentation. `This supports lowering of TDS and fine solids.`"
+            )
+            st.markdown(
+                "- **Increase Settling time**: Allows more particles to settle out of solution. `This improves clarity and reduces final turbidity.`"
+            )
+            st.markdown(
+                "- **Adjust Mixing Speed/Time**: Better mixing can improve contact efficiency of chemicals. `Slower mixing during flocculation can improve settling behavior.`"
             )
             st.info("Try adjusting one parameter at a time and re-run the prediction.")
