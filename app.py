@@ -8,6 +8,36 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 import matplotlib.pyplot as plt
 
+# Page configuration
+st.set_page_config(page_title="Mine Water Treatment Prediction", layout="centered")
+
+# Header Section
+col1, col2 = st.columns([1, 6])
+with col1:
+    st.image("ttu_logo.png", width=100)
+with col2:
+    st.markdown("""
+        <div style='text-align: center;'>
+            <h3 style='color: green;'>Tafila Technical University</h3>
+            <h4 style='color: green;'>Natural Resources and Chemical Engineering Department</h4>
+            <p><strong>Bachelor's Degree Project</strong></p>
+        </div>
+    """, unsafe_allow_html=True)
+
+# Project Info Box
+st.markdown("""
+    <div style='border: 2px solid #ddd; padding: 15px; border-radius: 10px; margin-top: 10px;'>
+        <h2 style='text-align: center;'>Modeling Coagulation–Flocculation with Artificial Neural Networks</h2>
+        <h4 style='text-align: center;'>Operation Parameters Prediction</h4>
+        <br>
+        <p><strong>Students:</strong><br>
+        Shahad Mohammed Abushamma<br>
+        Rahaf Ramzi Al -shakh Qasem<br>
+        Duaa Musa Al-Khalafat</p>
+        <p><strong>Supervisor:</strong> Dr. Ashraf Alsafasfeh</p>
+    </div>
+""", unsafe_allow_html=True)
+
 # Load data
 df = pd.read_excel("simulated_mine_water_treatment_data.xlsx")
 
@@ -43,22 +73,7 @@ model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 model.fit(X_train, y_train, validation_split=0.1, epochs=150, batch_size=16, verbose=0)
 
 # Streamlit App
-st.image("ttu_logo.png", width=800)
-st.markdown("""
-<div style='text-align: center;'>
-    <h3 style='color: green;'>Tafila Technical University<br>Natural Resources and Chemical Engineering Department</h3>
-    <h4>Bachelor's Degree Project</h4>
-</div>
-<div style='border: 2px solid #4CAF50; padding: 20px; border-radius: 10px; margin: 10px;'>
-    <h2 style='text-align: center;'>Modeling Coagulation–Flocculation with Artificial Neural Networks</h2>
-    <h3 style='text-align: center;'>Operation Parameters Prediction</h3>
-    <p><strong>Students:</strong><br>
-    Shahad Mohammed Abushamma<br>
-    Rahaf Ramzi Al -shakh Qasem<br>
-    Duaa Musa Al-Khalafat</p>
-    <p><strong>Supervisor:</strong> Dr. Ashraf Alsafasfeh</p>
-</div>
-""", unsafe_allow_html=True)
+st.title("💧 Mine Water Treatment Prediction App")
 
 st.subheader("📥 Enter the raw water quality parameters below:")
 
@@ -87,28 +102,28 @@ if submitted:
         new_input_scaled = scaler_X.transform(new_input)
         predicted_output_scaled = model.predict(new_input_scaled)
         predicted_output = scaler_y.inverse_transform(predicted_output_scaled)
+        predicted_output[predicted_output < 0] = 0
+
         final_outputs = predicted_output[0]
-
-        process_vars = output_vars[10:]
-        operational_data = []
-        for i, var in enumerate(process_vars, start=10):
-            value = final_outputs[i]
-            if var.endswith("_mg_L"):
-                unit = "mg/L"
-            elif var.endswith("_rpm"):
-                unit = "rpm"
-            elif var.endswith("_min"):
-                unit = "min"
-            else:
-                unit = ""
-            operational_data.append([var.replace('_', ' '), f"{value:.2f}", unit])
-
-        operational_df = pd.DataFrame(operational_data, columns=["Parameter", "Predicted Value", "Unit"])
-        st.subheader("⚙️ Predicted Operational Parameters")
-        st.info("To achieve good water treatment results, operational parameters should be at minimum these predicted values with ±2% margin.")
-        st.table(operational_df)
-
         quality_vars = output_vars[:7]
+        process_vars = output_vars[10:]
+
+        # Operational Parameters
+        st.subheader("⚙️ Predicted Operational Parameters")
+        st.caption("To ensure safe water quality, predicted operational parameters should be considered minimum values ±2%.")
+        units = [
+            "mg/L", "mg/L", "rpm", "min", "min", "min"
+        ]
+        data_process = []
+        for i, var in enumerate(process_vars):
+            val = final_outputs[i + 10]
+            data_process.append([var.replace('_', ' '), f"{val:.2f}", units[i]])
+
+        df_process = pd.DataFrame(data_process, columns=["Parameter", "Predicted Value", "Unit"])
+        st.table(df_process)
+
+        # Treated Water Quality
+        st.subheader("🧪 Predicted Treated Water Quality")
         limits = {
             'Turbidity_final_NTU': 5.0,
             'Fe_final_mg_L': 0.3,
@@ -119,11 +134,10 @@ if submitted:
             'TDS_final_mg_L': 1000.0
         }
 
-        st.subheader("🧪 Predicted Treated Water Quality")
         data = []
         safe = True
         for i, var in enumerate(quality_vars):
-            val = final_outputs[i]
+            val = max(0, final_outputs[i])
             limit = limits[var]
             status = "✅" if val <= limit else "❌"
             if status == "❌":
@@ -133,6 +147,7 @@ if submitted:
         df_display = pd.DataFrame(data, columns=["Parameter", "Predicted Value", "Limit", "Status"])
         st.table(df_display)
 
+        # Optional plot
         fig, ax = plt.subplots()
         values = [float(row[1]) for row in data]
         limits_list = [float(row[2].split()[-1]) for row in data]
