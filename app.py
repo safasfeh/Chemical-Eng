@@ -66,11 +66,35 @@ if submitted:
     quality_vars = output_vars[:7]
     process_vars = output_vars[10:]
 
-    # ⚙️ Operational Parameters
-    st.subheader("⚙️ Predicted Operational Parameters")
-    st.markdown("_The following values are minimum recommended dosages and times, with ±5% tolerance._")
-    for i, var in enumerate(process_vars, start=10):
-        st.markdown(f"**{var.replace('_', ' ')}**: {final_outputs[i]:.2f}")
+    if safe:
+      # ✅ Water is safe
+      st.success("✅ Result: Water is safe for reuse or discharge.")
+  
+      # ⚙️ Predicted Operational Parameters (only shown if water is safe)
+      st.subheader("⚙️ Predicted Operational Parameters")
+      st.markdown("_These values represent recommended dosages and process times (±5% tolerance)._")
+  
+      # Units for each operational parameter
+      op_units = {
+          'Coagulant_dose_mg_L': 'mg/L',
+          'Flocculant_dose_mg_L': 'mg/L',
+          'Mixing_speed_rpm': 'rpm',
+          'Rapid_mix_time_min': 'min',
+          'Slow_mix_time_min': 'min',
+          'Settling_time_min': 'min'
+      }
+  
+      # Build table
+      op_data = []
+      for i, var in enumerate(process_vars, start=10):
+          name = var.replace('_', ' ')
+          value = final_outputs[i]
+          unit = op_units.get(var, "")
+          op_data.append([name, f"{value:.2f}", unit])
+  
+      df_ops = pd.DataFrame(op_data, columns=["Parameter", "Value", "Unit"])
+      st.table(df_ops)
+
 
     # 🧪 Treated Water Quality Results
     st.subheader("🧪 Predicted Treated Water Quality")
