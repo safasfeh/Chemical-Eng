@@ -59,4 +59,86 @@ with st.form("input_form"):
     mn = st.number_input("Mn (mg/L)", value=0.3)
     cu = st.number_input("Cu (mg/L)", value=0.05)
     zn = st.number_input("Zn (mg/L)", value=0.1)
-    ss
+    ss = st.number_input("Suspended Solids (mg/L)", value=150.0)
+    tds = st.number_input("TDS (mg/L)", value=1000.0)
+
+    submitted = st.form_submit_button("Predict")
+
+if submitted:
+    # Validate pH
+    if not is_valid_ph(ph):
+        st.error("❌ Invalid pH: Please enter a value between 0 and 14.")
+    else:
+        # Predict
+        new_input = np.array([[ph, turbidity, temp, fe, mn, cu, zn, ss, tds]])
+        new_input_scaled = scaler_X.transform(new_input)
+        predicted_output_scaled = model.predict(new_input_scaled)
+        predicted_output = scaler_y.inverse_transform(predicted_output_scaled)
+
+        # Extract and label outputs
+        final_outputs = predicted_output[0]
+        quality_vars = output_vars[:7]
+        process_vars = output_vars[10:]
+
+        st.subheader("⚙️ Predicted Operational Parameters")
+        for i, var in enumerate(process_vars, start=10):
+            st.markdown(f"**{var.replace('_', ' ')}**: {final_outputs[i]:.2f}")
+
+        st.subheader("🧪 Predicted Treated Water Quality")
+        limits = {
+            'Turbidity_final_NTU': 5.0,
+            'Fe_final_mg_L': 0.3,
+            'Mn_final_mg_L': 0.1,
+            'Cu_final_mg_L': 1.0,
+            'Zn_final_mg_L': 5.0,
+            'Suspended_solids_final_mg_L': 50.0,
+            'TDS_final_mg_L': 1000.0
+        }
+
+        data = []
+        safe = True
+        for i, var in enumerate(quality_vars):
+            val = final_outputs[i]
+            limit = limits[var]
+            status = "✅" if val <= limit else "❌"
+            if status == "❌":
+                safe = False
+            data.append([var.replace('_', ' '), f"{val:.2f}", f"≤ {limit}", status])
+
+        df_display = pd.DataFrame(data, columns=["Parameter", "Predicted Value", "Limit", "Status"])
+        st.table(df_display)
+
+        # Optional plot
+        fig, ax = plt.subplots()
+        values = [float(row[1]) for row in data]
+        limits_list = [float(row[2].split()[-1]) for row in data]
+        labels = [row[0] for row in data]
+        ax.barh(labels, limits_list, color='lightgray', label="Limit")
+        ax.barh(labels, values, color='skyblue', alpha=0.8, label="Predicted")
+        ax.legend()
+        st.pyplot(fig)
+
+        # Assessment
+        if safe:
+            st.success("✅ Result: Water is safe for reuse or discharge.")
+        else:
+            st.error("❌ Result: Water is NOT safe for reuse or discharge.")
+            st.subheader("🔁 Suggested Operational Adjustments")
+            st.markdown(
+                "- **Increase Coagulant dose**: Improves the removal of suspended solids and metals. "
+                "`This can help reduce turbidity, Fe, Mn.`"
+            )
+            st.markdown(
+                "- **Increase Flocculant dose**: Enhances floc formation for better sedimentation. "
+                "`This supports lowering of TDS and fine solids.`"
+            )
+            st.markdown(
+                "- **Increase Settling time**: Allows more particles to settle out of solution. "
+                "`This improves clarity and reduces final turbidity.`"
+            )
+            st.markdown(
+                "- **Adjust Mixing Speed/Time**: Better mixing can improve contact efficiency of chemicals. "
+                "`Slower mixing during flocculation can improve settling behavior.`"
+            )
+            st.info("Try adjusting one parameter at a time and re-run the prediction.")
+
