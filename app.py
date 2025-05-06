@@ -14,7 +14,7 @@ st.set_page_config(page_title="Mine Water Treatment Prediction", layout="centere
 # Header Section
 col1, col2 = st.columns([1, 6])
 with col1:
-    st.image("ttu_logo.png", width=100)
+    st.image("ttu_logo.png", width=700)
 with col2:
     st.markdown("""
         <div style='text-align: center;'>
