@@ -112,7 +112,7 @@ if submitted:
 
         # Operational Parameters
         st.subheader("⚙️ Predicted Operational Parameters")
-        st.caption("To ensure safe water quality, predicted operational parameters should be considered minimum values ±2%.")
+        st.caption("To ensure safe water quality, predicted operational parameters should be considered minimum values ±6%.")
         units = [
             "mg/L", "mg/L", "rpm", "min", "min", "min"
         ]
