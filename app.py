@@ -14,18 +14,10 @@ st.set_page_config(page_title="Mine Water Treatment Prediction", layout="centere
 # Header Section with Centered Logo and Project Info
 
 # Display TTU logo centered
-st.markdown(
-    """
-    <div style='text-align: center;'>
-        <img src='ttu_logo.png' width='750'>
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
-
-# University and Department Info
+# Centered TTU Logo and Header Info
 st.markdown("""
-    <div style='text-align: center; margin-top: 10px;'>
+    <div style='text-align: center;'>
+        <img src='ttu_logo.png' width='750'><br><br>
         <h3 style='color: green;'>Tafila Technical University</h3>
         <h4 style='color: green;'>Natural Resources and Chemical Engineering Department</h4>
         <p><strong>Bachelor's Degree Project</strong></p>
