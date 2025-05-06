@@ -73,7 +73,9 @@ model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 model.fit(X_train, y_train, validation_split=0.1, epochs=150, batch_size=16, verbose=0)
 
 # Streamlit App
-st.titlestyle='text-align: center;("Water Treatment Prediction App by NRCE's students")'
+st.markdown("""
+    <h1 style='text-align: center; color: #0072B2;'>Water Treatment Prediction App by NRCE's Students</h1>
+""", unsafe_allow_html=True)
 
 st.subheader("📥 Enter the raw water quality parameters below:")
 
