@@ -3,28 +3,24 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 import matplotlib.pyplot as plt
 
-# Load data
+# Load dataset
 df = pd.read_excel("simulated_mine_water_treatment_data.xlsx")
 
 # Define variables
-input_vars = [
-    'pH_raw', 'Turbidity_raw_NTU', 'Temperature_C', 'Fe_initial_mg_L', 'Mn_initial_mg_L', 'Cu_initial_mg_L',
-    'Zn_initial_mg_L', 'Suspended_solids_mg_L', 'TDS_mg_L'
-]
-output_vars = [
-    'Turbidity_final_NTU', 'Fe_final_mg_L', 'Mn_final_mg_L', 'Cu_final_mg_L',
-    'Zn_final_mg_L', 'Suspended_solids_final_mg_L', 'TDS_final_mg_L',
-    'Turbidity_removal_%', 'Suspended_solids_removal_%', 'TDS_removal_%', 'Coagulant_dose_mg_L',
-    'Flocculant_dose_mg_L', 'Mixing_speed_rpm',
-    'Rapid_mix_time_min', 'Slow_mix_time_min', 'Settling_time_min'
-]
+input_vars = ['pH_raw', 'Turbidity_raw_NTU', 'Temperature_C', 'Fe_initial_mg_L',
+              'Mn_initial_mg_L', 'Cu_initial_mg_L', 'Zn_initial_mg_L',
+              'Suspended_solids_mg_L', 'TDS_mg_L']
+output_vars = ['Turbidity_final_NTU', 'Fe_final_mg_L', 'Mn_final_mg_L', 'Cu_final_mg_L',
+               'Zn_final_mg_L', 'Suspended_solids_final_mg_L', 'TDS_final_mg_L',
+               'Turbidity_removal_%', 'Suspended_solids_removal_%', 'TDS_removal_%',
+               'Coagulant_dose_mg_L', 'Flocculant_dose_mg_L', 'Mixing_speed_rpm',
+               'Rapid_mix_time_min', 'Slow_mix_time_min', 'Settling_time_min']
 
-# Prepare data
+# Data preparation
 X = df[input_vars].values
 y = df[output_vars].values
 scaler_X = MinMaxScaler()
@@ -33,22 +29,18 @@ X_scaled = scaler_X.fit_transform(X)
 y_scaled = scaler_y.fit_transform(y)
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2, random_state=42)
 
-# Build model
+# Model training
 model = Sequential([
     Dense(64, input_dim=X_train.shape[1], activation='relu'),
     Dense(64, activation='relu'),
     Dense(y_train.shape[1], activation='linear')
 ])
-model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+model.compile(optimizer='adam', loss='mse')
 model.fit(X_train, y_train, validation_split=0.1, epochs=150, batch_size=16, verbose=0)
 
-# Streamlit App
+# Streamlit App Interface
 st.title("💧 Mine Water Treatment Prediction App")
-
 st.subheader("📥 Enter the raw water quality parameters below:")
-
-def is_valid_ph(ph):
-    return 0 <= ph <= 14
 
 # Input form
 with st.form("input_form"):
@@ -61,84 +53,85 @@ with st.form("input_form"):
     zn = st.number_input("Zn (mg/L)", value=0.1)
     ss = st.number_input("Suspended Solids (mg/L)", value=150.0)
     tds = st.number_input("TDS (mg/L)", value=1000.0)
-
     submitted = st.form_submit_button("Predict")
 
 if submitted:
-    # Validate pH
-    if not is_valid_ph(ph):
-        st.error("❌ Invalid pH: Please enter a value between 0 and 14.")
-    else:
-        # Predict
-        new_input = np.array([[ph, turbidity, temp, fe, mn, cu, zn, ss, tds]])
-        new_input_scaled = scaler_X.transform(new_input)
-        predicted_output_scaled = model.predict(new_input_scaled)
-        predicted_output = scaler_y.inverse_transform(predicted_output_scaled)
+    new_input = np.array([[ph, turbidity, temp, fe, mn, cu, zn, ss, tds]])
+    new_input_scaled = scaler_X.transform(new_input)
+    predicted_output_scaled = model.predict(new_input_scaled)
+    predicted_output = scaler_y.inverse_transform(predicted_output_scaled)
+    final_outputs = np.maximum(predicted_output[0], 0)  # Clip negatives to zero
 
-        # Extract and label outputs
-        final_outputs = predicted_output[0]
-        quality_vars = output_vars[:7]
-        process_vars = output_vars[10:]
+    # Variables split
+    quality_vars = output_vars[:7]
+    process_vars = output_vars[10:]
 
-        st.subheader("⚙️ Predicted Operational Parameters")
-        for i, var in enumerate(process_vars, start=10):
-            st.markdown(f"**{var.replace('_', ' ')}**: {final_outputs[i]:.2f}")
+    # ⚙️ Operational Parameters
+    st.subheader("⚙️ Predicted Operational Parameters")
+    st.markdown("_The following values are minimum recommended dosages and times, with ±5% tolerance._")
+    for i, var in enumerate(process_vars, start=10):
+        st.markdown(f"**{var.replace('_', ' ')}**: {final_outputs[i]:.2f}")
 
-        st.subheader("🧪 Predicted Treated Water Quality")
-        limits = {
-            'Turbidity_final_NTU': 5.0,
-            'Fe_final_mg_L': 0.3,
-            'Mn_final_mg_L': 0.1,
-            'Cu_final_mg_L': 1.0,
-            'Zn_final_mg_L': 5.0,
-            'Suspended_solids_final_mg_L': 50.0,
-            'TDS_final_mg_L': 1000.0
-        }
+    # 🧪 Treated Water Quality Results
+    st.subheader("🧪 Predicted Treated Water Quality")
 
-        data = []
-        safe = True
-        for i, var in enumerate(quality_vars):
-            val = final_outputs[i]
-            limit = limits[var]
-            status = "✅" if val <= limit else "❌"
-            if status == "❌":
-                safe = False
-            data.append([var.replace('_', ' '), f"{val:.2f}", f"≤ {limit}", status])
+    limits = {
+        'Turbidity_final_NTU': 5.0,
+        'Fe_final_mg_L': 0.3,
+        'Mn_final_mg_L': 0.1,
+        'Cu_final_mg_L': 1.0,
+        'Zn_final_mg_L': 5.0,
+        'Suspended_solids_final_mg_L': 50.0,
+        'TDS_final_mg_L': 1000.0
+    }
 
-        df_display = pd.DataFrame(data, columns=["Parameter", "Predicted Value", "Limit", "Status"])
-        st.table(df_display)
+    safe = True
+    data = []
+    for i, var in enumerate(quality_vars):
+        val = final_outputs[i]
+        limit = limits[var]
+        status = "✅" if val <= limit else "❌"
+        if status == "❌":
+            safe = False
+        data.append([var.replace('_', ' '), f"{val:.2f}", f"≤ {limit}", status])
 
-        # Optional plot
-        fig, ax = plt.subplots()
-        values = [float(row[1]) for row in data]
-        limits_list = [float(row[2].split()[-1]) for row in data]
+    df_display = pd.DataFrame(data, columns=["Parameter", "Predicted Value", "Limit", "Status"])
+    st.table(df_display)
+
+    # ✅ Show only if safe
+    if safe:
+        st.success("✅ Result: Water is safe for reuse or discharge.")
+
+        # Chart 1: Raw vs Treated
+        st.subheader("📊 Raw vs Predicted Treated Values")
+        raw_vals = [ph, turbidity, temp, fe, mn, cu, zn, ss, tds]
+        treated_vals = final_outputs[:7]
+        labels = ['pH', 'Turbidity', 'Fe', 'Mn', 'Cu', 'Zn', 'SS', 'TDS']
+
+        fig1, ax1 = plt.subplots()
+        x = np.arange(len(labels))
+        ax1.bar(x - 0.2, raw_vals[:len(labels)], width=0.4, label='Raw Input', color='orange')
+        ax1.bar(x + 0.2, treated_vals, width=0.4, label='Treated Output', color='green')
+        ax1.set_xticks(x)
+        ax1.set_xticklabels(labels, rotation=45)
+        ax1.set_ylabel("mg/L or NTU")
+        ax1.set_title("Raw vs Treated Water Quality")
+        ax1.legend()
+        st.pyplot(fig1)
+
+        # Chart 2: Treated vs Limits
+        st.subheader("📊 Treated Quality vs Acceptable Limits")
+        limits_vals = [limits[var] for var in limits]
+        treated_vals = [float(row[1]) for row in data]
         labels = [row[0] for row in data]
-        ax.barh(labels, limits_list, color='lightgray', label="Limit")
-        ax.barh(labels, values, color='skyblue', alpha=0.8, label="Predicted")
-        ax.legend()
-        st.pyplot(fig)
 
-        # Assessment
-        if safe:
-            st.success("✅ Result: Water is safe for reuse or discharge.")
-        else:
-            st.error("❌ Result: Water is NOT safe for reuse or discharge.")
-            st.subheader("🔁 Suggested Operational Adjustments")
-            st.markdown(
-                "- **Increase Coagulant dose**: Improves the removal of suspended solids and metals. "
-                "`This can help reduce turbidity, Fe, Mn.`"
-            )
-            st.markdown(
-                "- **Increase Flocculant dose**: Enhances floc formation for better sedimentation. "
-                "`This supports lowering of TDS and fine solids.`"
-            )
-            st.markdown(
-                "- **Increase Settling time**: Allows more particles to settle out of solution. "
-                "`This improves clarity and reduces final turbidity.`"
-            )
-            st.markdown(
-                "- **Adjust Mixing Speed/Time**: Better mixing can improve contact efficiency of chemicals. "
-                "`Slower mixing during flocculation can improve settling behavior.`"
-            )
-            st.info("Try adjusting one parameter at a time and re-run the prediction.")
-
+        fig2, ax2 = plt.subplots()
+        x = np.arange(len(labels))
+        ax2.bar(x - 0.2, limits_vals, width=0.4, label='Limit', color='gray')
+        ax2.bar(x + 0.2, treated_vals, width=0.4, label='Treated', color='blue')
+        ax2.set_xticks(x)
+        ax2.set_xticklabels(labels, rotation=45)
+        ax2.set_ylabel("mg/L or NTU")
+        ax2.set_title("Treated Water Quality vs Standards")
+        ax2.legend()
+        st.pyplot(fig2)
