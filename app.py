@@ -14,7 +14,7 @@ st.set_page_config(page_title="Mine Water Treatment Prediction", layout="centere
 # Header Section
 col1, col2 = st.columns([1, 6])
 with col1:
-    st.image("ttu_logo.png", width=700)
+    st.image("ttu_logo.png", width=800)
 with col2:
     st.markdown("""
         <div style='text-align: center;'>
@@ -73,7 +73,7 @@ model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 model.fit(X_train, y_train, validation_split=0.1, epochs=150, batch_size=16, verbose=0)
 
 # Streamlit App
-st.title("💧 Mine Water Treatment Prediction App")
+st.title("Water Treatment Prediction App by NRCE students")
 
 st.subheader("📥 Enter the raw water quality parameters below:")
 
