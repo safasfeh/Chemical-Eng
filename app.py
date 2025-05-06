@@ -75,13 +75,21 @@ if submitted:
         predicted_output_scaled = model.predict(new_input_scaled)
         predicted_output = scaler_y.inverse_transform(predicted_output_scaled)
 
+        # Handling negative values
+        predicted_output[predicted_output < 0] = 0  # Setting negative values to 0
+
         # Extract and label outputs
         final_outputs = predicted_output[0]
         quality_vars = output_vars[:7]
         process_vars = output_vars[10:]
 
-        # Check for safe water
-        safe = True
+        # Display predicted operational parameters
+        st.subheader("⚙️ Predicted Operational Parameters")
+        for i, var in enumerate(process_vars, start=10):
+            st.markdown(f"**{var.replace('_', ' ')}**: {final_outputs[i]:.2f}")
+
+        # Display predicted treated water quality
+        st.subheader("🧪 Predicted Treated Water Quality")
         limits = {
             'Turbidity_final_NTU': 5.0,
             'Fe_final_mg_L': 0.3,
@@ -92,38 +100,63 @@ if submitted:
             'TDS_final_mg_L': 1000.0
         }
 
+        data = []
+        safe = True
         for i, var in enumerate(quality_vars):
             val = final_outputs[i]
             limit = limits[var]
-            if val > limit:
-                safe = False  # If any value exceeds the limit, water is not safe
+            status = "✅" if val <= limit else "❌"
+            if status == "❌":
+                safe = False
+            data.append([var.replace('_', ' '), f"{val:.2f}", f"≤ {limit}", status])
 
-        # Display results based on safe status
+        df_display = pd.DataFrame(data, columns=["Parameter", "Predicted Value", "Limit", "Status"])
+        st.table(df_display)
+
+        # Optional chart comparison
+        st.subheader("📊 Comparison: Raw Water vs Predicted Treated Water Quality")
+        raw_water_values = [ph, turbidity, temp, fe, mn, cu, zn, ss, tds]
+        predicted_values = [final_outputs[i] for i in range(len(quality_vars))]
+        
+        fig, ax = plt.subplots()
+        index = np.arange(len(input_vars))
+        bar_width = 0.35
+        ax.barh(index, raw_water_values, bar_width, label='Raw Water Quality', color='lightgray')
+        ax.barh(index + bar_width, predicted_values, bar_width, label='Predicted Treated Water Quality', color='skyblue')
+
+        ax.set_xlabel('Values')
+        ax.set_title('Comparison of Raw Water Quality vs Predicted Treated Water Quality')
+        ax.set_yticks(index + bar_width / 2)
+        ax.set_yticklabels(input_vars)
+        ax.legend()
+        st.pyplot(fig)
+
+        # Operational parameters and adjustments
+        st.markdown(
+            "⚙️ **Predicted Operational Parameters** are the minimum values required to achieve the predicted treated water quality values "
+            "with a ±5% error margin. You can adjust operational parameters accordingly to optimize the treatment process."
+        )
+
+        # Suggested operational adjustments
         if safe:
-            # ✅ Water is safe
             st.success("✅ Result: Water is safe for reuse or discharge.")
-
-            # ⚙️ Predicted Operational Parameters (only shown if water is safe)
-            st.subheader("⚙️ Predicted Operational Parameters")
-            st.markdown("_These values represent recommended dosages and process times (±5% tolerance)._")
-
-            # Units for each operational parameter
-            op_units = {
-                'Coagulant_dose_mg_L': 'mg/L',
-                'Flocculant_dose_mg_L': 'mg/L',
-                'Mixing_speed_rpm': 'rpm',
-                'Rapid_mix_time_min': 'min',
-                'Slow_mix_time_min': 'min',
-                'Settling_time_min': 'min'
-            }
-
-            # Build table
-            op_data = []
-            for i, var in enumerate(process_vars, start=10):
-                name = var.replace('_', ' ')
-                value = final_outputs[i]
-                unit = op_units.get(var, "")
-                op_data.append([name, f"{value:.2f}", unit])
-
-            df_ops = pd.DataFrame(op_data, columns=["Parameter", "Value", "Unit"])
-            st.table(df_ops)
+        else:
+            st.error("❌ Result: Water is NOT safe for reuse or discharge.")
+            st.subheader("🔁 Suggested Operational Adjustments")
+            st.markdown(
+                "- **Increase Coagulant dose**: Improves the removal of suspended solids and metals. "
+                "This can help reduce turbidity, Fe, Mn."
+            )
+            st.markdown(
+                "- **Increase Flocculant dose**: Enhances floc formation for better sedimentation. "
+                "This supports lowering of TDS and fine solids."
+            )
+            st.markdown(
+                "- **Increase Settling time**: Allows more particles to settle out of solution. "
+                "This improves clarity and reduces final turbidity."
+            )
+            st.markdown(
+                "- **Adjust Mixing Speed/Time**: Better mixing can improve contact efficiency of chemicals. "
+                "Slower mixing during flocculation can improve settling behavior."
+            )
+            st.info("Try adjusting one parameter at a time and re-run the prediction.")
