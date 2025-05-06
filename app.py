@@ -11,18 +11,26 @@ import matplotlib.pyplot as plt
 # Page configuration
 st.set_page_config(page_title="Mine Water Treatment Prediction", layout="centered")
 
-# Header Section
-col1, col2 = st.columns([1, 6])
-with col1:
-    st.image("ttu_logo.png", width=800)
-with col2:
-    st.markdown("""
-        <div style='text-align: center;'>
-            <h3 style='color: green;'>Tafila Technical University</h3>
-            <h4 style='color: green;'>Natural Resources and Chemical Engineering Department</h4>
-            <p><strong>Bachelor's Degree Project</strong></p>
-        </div>
-    """, unsafe_allow_html=True)
+# Header Section with Centered Logo and Project Info
+
+# Display TTU logo centered
+st.markdown(
+    """
+    <div style='text-align: center;'>
+        <img src='ttu_logo.png' width='750'>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
+
+# University and Department Info
+st.markdown("""
+    <div style='text-align: center; margin-top: 10px;'>
+        <h3 style='color: green;'>Tafila Technical University</h3>
+        <h4 style='color: green;'>Natural Resources and Chemical Engineering Department</h4>
+        <p><strong>Bachelor's Degree Project</strong></p>
+    </div>
+""", unsafe_allow_html=True)
 
 # Project Info Box
 st.markdown("""
@@ -73,7 +81,7 @@ model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 model.fit(X_train, y_train, validation_split=0.1, epochs=150, batch_size=16, verbose=0)
 
 # Streamlit App
-st.title("Water Treatment Prediction App by NRCE students")
+st.titlestyle='text-align: center;("Water Treatment Prediction App by NRCE's students")'
 
 st.subheader("📥 Enter the raw water quality parameters below:")
 
