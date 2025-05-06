@@ -1,6 +1,7 @@
 streamlit
 pandas
 numpy
+matplotlib
 scikit-learn
-openpyxl
 tensorflow
+openpyxl  # needed for reading Excel files
