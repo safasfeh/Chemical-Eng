@@ -65,26 +65,19 @@ with st.form("input_form"):
     submitted = st.form_submit_button("Predict")
 
 if submitted:
-    # Validate pH
     if not is_valid_ph(ph):
         st.error("❌ Invalid pH: Please enter a value between 0 and 14.")
     else:
-        # Predict
         new_input = np.array([[ph, turbidity, temp, fe, mn, cu, zn, ss, tds]])
         new_input_scaled = scaler_X.transform(new_input)
         predicted_output_scaled = model.predict(new_input_scaled)
         predicted_output = scaler_y.inverse_transform(predicted_output_scaled)
 
-        # Extract and label outputs
         final_outputs = predicted_output[0]
+
         quality_vars = output_vars[:7]
         process_vars = output_vars[10:]
 
-        st.subheader("⚙️ Predicted Operational Parameters")
-        for i, var in enumerate(process_vars, start=10):
-            st.markdown(f"**{var.replace('_', ' ')}**: {final_outputs[i]:.2f}")
-
-        st.subheader("🧪 Predicted Treated Water Quality")
         limits = {
             'Turbidity_final_NTU': 5.0,
             'Fe_final_mg_L': 0.3,
@@ -106,6 +99,7 @@ if submitted:
             data.append([var.replace('_', ' '), f"{val:.2f}", f"≤ {limit}", status])
 
         df_display = pd.DataFrame(data, columns=["Parameter", "Predicted Value", "Limit", "Status"])
+        st.subheader("🧪 Predicted Treated Water Quality")
         st.table(df_display)
 
         # Optional plot
@@ -118,9 +112,28 @@ if submitted:
         ax.legend()
         st.pyplot(fig)
 
-        # Assessment
         if safe:
             st.success("✅ Result: Water is safe for reuse or discharge.")
+
+            # Show operational parameters table only if treated water is within limits
+            op_units = {
+                'Coagulant_dose_mg_L': 'mg/L',
+                'Flocculant_dose_mg_L': 'mg/L',
+                'Mixing_speed_rpm': 'rpm',
+                'Rapid_mix_time_min': 'min',
+                'Slow_mix_time_min': 'min',
+                'Settling_time_min': 'min'
+            }
+
+            op_data = []
+            for i, var in enumerate(process_vars, start=10):
+                unit = op_units.get(var, '')
+                op_data.append([var.replace('_', ' '), f"{final_outputs[i]:.2f}", unit])
+
+            df_ops = pd.DataFrame(op_data, columns=["Parameter", "Predicted Value", "Unit"])
+            st.subheader("⚙️ Predicted Operational Parameters")
+            st.table(df_ops)
+
         else:
             st.error("❌ Result: Water is NOT safe for reuse or discharge.")
             st.subheader("🔁 Suggested Operational Adjustments")
@@ -141,4 +154,3 @@ if submitted:
                 "`Slower mixing during flocculation can improve settling behavior.`"
             )
             st.info("Try adjusting one parameter at a time and re-run the prediction.")
-
