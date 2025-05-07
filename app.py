@@ -207,6 +207,8 @@ if submitted:
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 10, "Raw Water Quality Parameters", ln=True)
     pdf.set_font("Arial", '', 11)
+    for var, value in user_inputs.items():
+    pdf.cell(200, 10, txt=f"{var}: {value}", ln=True)
     for var in input_vars:
         pdf.cell(0, 10, f"{var.replace('_', ' ').capitalize()}: {user_inputs[var]}", ln=True)
 
@@ -214,6 +216,7 @@ if submitted:
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 10, "Predicted Treated Water Quality", ln=True)
     pdf.set_font("Arial", '', 11)
+    
     for i, var in enumerate(quality_vars):
         val = max(0, final_outputs[i])
         limit = limits[var]
