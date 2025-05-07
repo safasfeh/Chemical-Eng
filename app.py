@@ -11,9 +11,6 @@ import matplotlib.pyplot as plt
 # Page configuration
 st.set_page_config(page_title="Mine Water Treatment Prediction", layout="centered")
 
-# Header Section with Centered Logo and Project Info
-
-# Display TTU logo centered
 # Centered TTU Logo and Header Info
 st.image("ttu_logo.png", width=800)
 st.markdown("""
@@ -72,7 +69,7 @@ model = Sequential([
 model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 model.fit(X_train, y_train, validation_split=0.1, epochs=150, batch_size=16, verbose=0)
 
-# Streamlit App
+# Streamlit App Header
 st.markdown("""
     <h1 style='text-align: center; color: #0072B2;'>Water Treatment Prediction App by NRCE's Students</h1>
 """, unsafe_allow_html=True)
@@ -120,7 +117,6 @@ if submitted:
         for i, var in enumerate(process_vars):
             val = final_outputs[i + 10]
             data_process.append([var.replace('_', ' '), f"{val:.2f}", units[i]])
-
         df_process = pd.DataFrame(data_process, columns=["Parameter", "Predicted Value", "Unit"])
         st.table(df_process)
 
@@ -139,17 +135,20 @@ if submitted:
         data = []
         safe = True
         for i, var in enumerate(quality_vars):
-            val = max(0, final_outputs[i])
             limit = limits[var]
-            status = "✅" if val <= limit else "❌"
-            if status == "❌":
+            val = max(0, final_outputs[i])
+            if val > limit:
+                val = limit * 1.005  # Cap at +0.5% of limit
+                status = "❌"
                 safe = False
+            else:
+                status = "✅"
             data.append([var.replace('_', ' '), f"{val:.2f}", f"≤ {limit}", status])
 
         df_display = pd.DataFrame(data, columns=["Parameter", "Predicted Value", "Limit", "Status"])
         st.table(df_display)
 
-        # Optional plot
+        # Optional Plot
         fig, ax = plt.subplots()
         values = [float(row[1]) for row in data]
         limits_list = [float(row[2].split()[-1]) for row in data]
