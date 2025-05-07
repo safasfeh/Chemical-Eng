@@ -9,6 +9,8 @@ from tensorflow.keras.layers import Dense
 import matplotlib.pyplot as plt
 from fpdf import FPDF
 from io import BytesIO
+import datetime
+
 
 # Page configuration
 st.set_page_config(page_title="Water Treatment Prediction", layout="centered")
