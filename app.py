@@ -7,6 +7,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 import matplotlib.pyplot as plt
+from fpdf import FPDF
+from io import BytesIO
 
 # Page configuration
 st.set_page_config(page_title="Water Treatment Prediction", layout="centered")
