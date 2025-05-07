@@ -5,3 +5,4 @@ matplotlib
 scikit-learn
 tensorflow
 openpyxl  # needed for reading Excel files
+fpdf
