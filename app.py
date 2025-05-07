@@ -192,6 +192,11 @@ if submitted:
     pdf.cell(200, 10, txt="Input Parameters:", ln=True)
 
     # Display the input parameters in the report
+    user_inputs = {
+    "Temperature (°C)": st.number_input("Enter temperature (°C):", value=25),
+    "pH": st.number_input("Enter pH level:", value=7.0),
+    "Turbidity (NTU)": st.number_input("Enter turbidity (NTU):", value=1.0),
+}
     for var, value in user_inputs.items():
         pdf.cell(200, 10, txt=f"{var}: {value}", ln=True)
 
