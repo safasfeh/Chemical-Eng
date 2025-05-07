@@ -202,14 +202,20 @@ if submitted:
     
     # Assume you have input_vars, user_inputs, final_outputs, quality_vars, limits, and safe defined earlier
     
-    # Create PDF
+from fpdf import FPDF
+import datetime
+from io import BytesIO
+import streamlit as st
+
+# Create PDF
 buffer = BytesIO()
 pdf = FPDF()
 pdf.add_page()
 
+# Set font to built-in Arial
 pdf.set_font("Arial", size=12)
 
-# Logo
+# Add image
 pdf.image("ttu_logo.png", x=30, w=150)
 pdf.ln(10)
 
@@ -235,6 +241,7 @@ pdf.set_font("Arial", 'B', 12)
 pdf.cell(0, 10, "Raw Water Quality Parameters", ln=True)
 pdf.set_font("Arial", '', 11)
 
+# Add user inputs
 for var in input_vars:
     val = str(user_inputs[var]).encode("latin-1", "ignore").decode("latin-1")
     pdf.cell(0, 10, f"{var.replace('_', ' ').capitalize()}: {val}", ln=True)
@@ -246,6 +253,7 @@ pdf.set_font("Arial", 'B', 12)
 pdf.cell(0, 10, "Predicted Treated Water Quality", ln=True)
 pdf.set_font("Arial", '', 11)
 
+# Add predicted values
 for i, var in enumerate(quality_vars):
     val = max(0, final_outputs[i])
     limit = limits[var]
