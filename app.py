@@ -9,7 +9,7 @@ from tensorflow.keras.layers import Dense
 import matplotlib.pyplot as plt
 
 # Page configuration
-st.set_page_config(page_title="Mine Water Treatment Prediction", layout="centered")
+st.set_page_config(page_title="Water Treatment Prediction", layout="centered")
 
 # Centered TTU Logo and Header Info
 st.image("ttu_logo.png", width=800)
