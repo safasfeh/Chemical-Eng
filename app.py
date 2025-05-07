@@ -176,3 +176,62 @@ if submitted:
                 "- **Adjust Mixing Speed/Time**: Better mixing can improve contact efficiency of chemicals. `Slower mixing during flocculation can improve settling behavior.`"
             )
             st.info("Try adjusting one parameter at a time, as recall, the predicted operational parameters should be considered minimum values ±6%.")
+        # Generate PDF
+    buffer = BytesIO()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.image("ttu_logo.png", x=30, w=150)
+    pdf.ln(10)
+
+    pdf.set_text_color(0, 102, 0)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, "Tafila Technical University", ln=True, align='C')
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Natural Resources and Chemical Engineering Department", ln=True, align='C')
+    pdf.ln(5)
+
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Arial", '', 11)
+    pdf.multi_cell(0, 10, "Project Title: Modeling Coagulation–Flocculation with Artificial Neural Networks\nOperation Parameters Prediction\n")
+    pdf.ln(2)
+    pdf.multi_cell(0, 10, "Prepared by:\nShahad Mohammed Abushamma\nRahaf Ramzi Al-shakh Qasem\nDuaa Musa Al-Khalafat")
+    pdf.cell(0, 10, f"Date of Test: {datetime.date.today()}", ln=True)
+    pdf.ln(5)
+
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Raw Water Quality Parameters", ln=True)
+    pdf.set_font("Arial", '', 11)
+    for var in input_vars:
+        pdf.cell(0, 10, f"{var.replace('_', ' ').capitalize()}: {user_inputs[var]}", ln=True)
+
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Predicted Treated Water Quality", ln=True)
+    pdf.set_font("Arial", '', 11)
+    for i, var in enumerate(quality_vars):
+        val = max(0, final_outputs[i])
+        limit = limits[var]
+        status = "Safe" if val <= limit else "Above limit"
+        pdf.cell(0, 10, f"{var}: {val:.2f} (Limit: {limit}) - {status}", ln=True)
+
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.set_text_color(0, 102, 0) if safe else pdf.set_text_color(204, 0, 0)
+    pdf.cell(0, 10, "Final Result:", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.set_text_color(0, 0, 0)
+    result_text = "Water is safe for reuse or discharge." if safe else "Water is NOT safe for reuse or discharge."
+    pdf.multi_cell(0, 10, result_text)
+
+    pdf.output(buffer)
+    buffer.seek(0)
+
+    st.download_button(
+        label="📄 Download Full Report as PDF",
+        data=buffer,
+        file_name="Water_Treatment_Report.pdf",
+        mime="application/pdf"
+    )
+
