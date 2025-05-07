@@ -96,6 +96,17 @@ with st.form("input_form"):
     tds = st.number_input("TDS (mg/L)", value=1000.0)
 
     submitted = st.form_submit_button("Predict")
+user_inputs = {
+    'pH_raw': ph,
+    'Turbidity_raw_NTU': turbidity,
+    'Temperature_C': temp,
+    'Fe_initial_mg_L': fe,
+    'Mn_initial_mg_L': mn,
+    'Cu_initial_mg_L': cu,
+    'Zn_initial_mg_L': zn,
+    'Suspended_solids_mg_L': ss,
+    'TDS_mg_L': tds
+}
 
 if submitted:
     if not is_valid_ph(ph):
@@ -207,8 +218,7 @@ if submitted:
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 10, "Raw Water Quality Parameters", ln=True)
     pdf.set_font("Arial", '', 11)
-    for var, value in user_inputs.items():
-    pdf.cell(200, 10, txt=f"{var}: {value}", ln=True)
+
     for var in input_vars:
         pdf.cell(0, 10, f"{var.replace('_', ' ').capitalize()}: {user_inputs[var]}", ln=True)
 
