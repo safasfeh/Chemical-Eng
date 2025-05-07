@@ -109,7 +109,7 @@ if submitted:
 
         # Operational Parameters
         st.subheader("⚙️ Predicted Operational Parameters")
-        st.caption("To ensure safe water quality, predicted operational parameters should be considered minimum values ±6%.")
+        st.info("To ensure safe water quality, predicted operational parameters should be considered minimum values ±6%.")
         units = [
             "mg/L", "mg/L", "rpm", "min", "min", "min"
         ]
@@ -161,7 +161,7 @@ if submitted:
         if safe:
             st.success("✅ Result: Water is safe for reuse or discharge.")
         else:
-            st.error("❌ Result: Water is NOT safe for reuse or discharge.")
+            st.error("❌ Result: Water is NOT safe for reuse or discharge. Unless if the predicted values are capped at +1% of their respective limits")
             st.subheader("🔁 Suggested Operational Adjustments")
             st.markdown(
                 "- **Increase Coagulant dose**: Improves the removal of suspended solids and metals. `This can help reduce turbidity, Fe, Mn.`"
@@ -175,4 +175,4 @@ if submitted:
             st.markdown(
                 "- **Adjust Mixing Speed/Time**: Better mixing can improve contact efficiency of chemicals. `Slower mixing during flocculation can improve settling behavior.`"
             )
-            st.info("Try adjusting one parameter at a time and re-run the prediction.")
+            st.info("Try adjusting one parameter at a time, as recall, the predicted operational parameters should be considered minimum values ±6%.")
