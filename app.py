@@ -242,8 +242,7 @@ if submitted:
     result_text = "Water is safe for reuse or discharge." if safe else "Water is NOT safe for reuse or discharge."
     pdf.multi_cell(0, 10, result_text)
 
-    pdf.output(buffer)
-    buffer.seek(0)
+
 
     st.download_button(
         label="📄 Download Full Report as PDF",
