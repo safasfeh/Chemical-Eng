@@ -178,7 +178,7 @@ if submitted:
                 "- **Adjust Mixing Speed/Time**: Better mixing can improve contact efficiency of chemicals. `Slower mixing during flocculation can improve settling behavior.`"
             )
             st.info("Try adjusting one parameter at a time, as recall, the predicted operational parameters should be considered minimum values ±6%.")
-# Create PDF
+  # Create PDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -189,13 +189,14 @@ if submitted:
     pdf.set_font("Arial", size=10)
     pdf.cell(200, 10, txt="Input Parameters:", ln=True)
 
-    input_vars = list(user_inputs.keys())
-    for var in input_vars:
-        pdf.cell(200, 10, txt=f"{var}: {user_inputs[var]}", ln=True)
+    # Display the input parameters in the report
+    for var, value in user_inputs.items():
+        pdf.cell(200, 10, txt=f"{var}: {value}", ln=True)
 
-    # Save and download
+    # Save and allow file download
     pdf_file = "water_quality_report.pdf"
     pdf.output(pdf_file)
 
+    # Enable the user to download the generated report
     with open(pdf_file, "rb") as file:
         st.download_button("Download Report", file, file_name=pdf_file)
